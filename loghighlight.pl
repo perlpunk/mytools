@@ -1,4 +1,4 @@
-#!/usr/bin/perl5.10
+#!/usr/bin/perl
 use strict;
 use warnings;
 use Term::ANSIColor;
