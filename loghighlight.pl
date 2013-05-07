@@ -48,6 +48,7 @@ for (my $i = 0; $i < @ARGV; $i += 2) {
     my $color = $re2[ $i + 1 ];
     $re_compiled{ $name } = $qr;
     $re{ $name } = $color;
+    push @re, $name;
 }
 while (<STDIN>) {
     for my $name (@re) {
