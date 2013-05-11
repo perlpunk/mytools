@@ -12,11 +12,11 @@ my @re2 = @ARGV;
 if (not @types and not @re2) {
     print <<"EOM";
 Usage:
-tail log | $0 --type /path/to/type.yaml
-tail log | $0 --type type.yaml # \$ENV{HOME}/.loghighlight/type.yaml
-tail log | $0 --type foo.yaml --type bar.yaml
+tail log | $0 --type /path/to/type.json
+tail log | $0 --type type.json # \$ENV{HOME}/.loghighlight/type.json
+tail log | $0 --type foo.json --type bar.json
 tail log | $0 "foo\\d" red
-tail log | $0 --type foo.yaml --type bar.yaml "foo\\d" red
+tail log | $0 --type foo.json --type bar.json "foo\\d" red
 EOM
     exit;
 }
@@ -75,7 +75,7 @@ Highlight parts of log lines with ansi colors.
 
 =head1 EXAMPLE
 
-    type.yaml:
+    type.json
     {
         "colors": [
             { "name": "post request", "regex": "\\bPOST\\b", "color": "bold" },
@@ -85,9 +85,9 @@ Highlight parts of log lines with ansi colors.
 
 =head1 USAGE
 
-    tail log | loghighlight.pl --type /path/to/type.yaml
-    tail log | loghighlight.pl --type type.yaml # \$ENV{HOME}/.loghighlight/type.yaml
-    tail log | loghighlight.pl --type foo.yaml --type bar.yaml
+    tail log | loghighlight.pl --type /path/to/type.json
+    tail log | loghighlight.pl --type type.json # \$ENV{HOME}/.loghighlight/type.json
+    tail log | loghighlight.pl --type foo.json --type bar.json
     tail log | loghighlight.pl "foo\\d" red
-    tail log | loghighlight.pl --type foo.yaml --type bar.yaml "foo\\d" red
+    tail log | loghighlight.pl --type foo.json --type bar.json "foo\\d" red
 
