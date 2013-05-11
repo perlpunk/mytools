@@ -13,6 +13,7 @@ if ($ENV{STORABLE_EVAL}){
 }
 GetOptions(
     "size" => \my $size,
+    "no-pager" => \my $no_pager,
 );
 if ($size) {
     require Devel::Size
@@ -22,7 +23,8 @@ unless (@ARGV) {
 Usage:
 $0 file.storable
 $0 file.storable --size # calculates memory usage of the data structure
-STORABLE_EVAL=1 $0 file # to activate eval
+STORABLE_EVAL=1 $0 file.storable # to activate eval
+$0 file.storable --no-pager # deactivate paging
 EOM
     exit;
 }
@@ -33,12 +35,29 @@ if (!defined $file or !-r $file) {
 unless ($ENV{STORABLE_EVAL}) {
     print "eval deactivated, use `STORABLE_EVAL=1 $0` to activate ist\n";
 }
+my $fh = \*STDOUT;
+my $pager;
+my $command = $ENV{PAGER} || "less";
+if ($no_pager) {
+    $command = '';
+}
+if ($command) {
+    if ($command eq 'less') {
+        $command .= " -r";
+    }
+    unless ( open $pager, '|-', $command ) {
+        warn "unable to page: $!";
+    }
+    else {
+        $fh = $pager;
+    }
+}
 my $data = retrieve $file;
-print __PACKAGE__.':'.__LINE__.$".Data::Dumper->Dump([\$data], ['data']);
 if ($size) {
     my $total_size = Devel::Size::total_size($data);
-    print "Size: $total_size\n";
+    print $fh "Size: $total_size\n";
 }
+print $fh Data::Dumper->Dump([$data], ['data']);
 
 __END__
 
