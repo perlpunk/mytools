@@ -43,7 +43,7 @@ if ($no_pager) {
 }
 if ($command) {
     if ($command eq 'less') {
-        $command .= " -r";
+        $command .= " -R";
     }
     unless ( open $pager, '|-', $command ) {
         warn "unable to page: $!";
