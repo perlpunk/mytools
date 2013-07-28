@@ -1,0 +1,206 @@
+#!env perl
+# urxvt selection popup with custom functions added
+my @params;
+
+sub msg {
+   my ($self, $msg, $time) = @_;
+   $time ||= 2;
+
+   my $overlay = $self->overlay (0, 0, $self->strwidth ($msg), 1);
+   $overlay->set (0, 0, $msg);
+   my $iow; $iow = urxvt::timer->new->after($time)->cb (sub {
+      undef $overlay;
+      undef $iow;
+   });
+}
+
+sub on_start {
+   my ($self) = @_;
+
+   $self->{browser} = $self->x_resource ("urlLauncher") || "x-www-browser";
+
+   $self->grab_button (3, urxvt::ControlMask);
+
+   ()
+}
+
+sub on_button_press {
+   my ($self, $event) = @_;
+
+   if ($event->{button} == 3 && $event->{state} & urxvt::ControlMask) {
+      my $popup = $self->popup ($event)
+         or return 1;
+
+      $popup->add_title ("Convert Selection");
+
+      my $text = $self->selection;
+
+      my $title = $text;
+      $title =~ s/[\x00-\x1f\x80-\x9f]/·/g;
+      substr $title, 40, -1, "..." if 40 < length $title;
+      $popup->add_title ($title);
+      $popup->add_separator;
+
+      my $add_button = sub {
+         my ($title, $cb, $time) = @_;
+
+         $popup->add_button ($title => sub {
+            for ($text) {
+               my $orig = $_;
+               $cb->();
+
+               if ($orig ne $_) {
+                  $self->selection ($_);
+                  s/[\x00-\x1f\x80-\x9f]/·/g;
+                  $self->msg ($self->special_encode($_), $time);
+               }
+            }
+         });
+      };
+
+      for ($text) {
+
+         /./
+            and do {
+                $add_button->("rot13" => sub { y/A-Za-z/N-ZA-Mn-za-m/ });
+
+                $add_button->(
+                    "append" => sub {
+                    push @params, $_;
+                });
+                $add_button->(
+                    "paste params" => sub {
+                    $_ = join ' ', @params;
+                });
+
+                $add_button->("remove line numbers" => sub {
+                    s/^ *\d+ //gm;
+                    s/▸ {3}/\t/g;
+                    s/¬//g;
+                });
+                $add_button->(
+                    "amarok irc" => sub {
+                        my @lines = qx{amarok_playing.pl};
+                        chomp @lines;
+                        $_ = "/me hört $lines[0]";
+                });
+            };
+
+         /./
+            and $add_button->("eval perl expression" => sub { no warnings; $_ = eval $_ });
+
+         /./
+            and $add_button->((sprintf "to unicode hex index (%x)", ord) => sub { $_ = sprintf "%x", ord });
+
+         /^(\S+):(\d+):?$/
+            and $add_button->("vi-commands to load '$1'" => sub { s/^(\S+):(\d+):?$/\x1b:e $1\x0d:$2\x0d/ });
+
+         /%[0-9a-fA-F]{2}/ && !/%[^0-9a-fA-F]/ && !/%.[^0-9a-fA-F]/
+            and $add_button->("uri unescape" => sub { s/%([0-9a-fA-F]{2})/chr hex $1/ge });
+
+         /[\\"'\ \t|&;<>()]/
+            and $add_button->("shell quote" => sub { $_ = "\Q$_" });
+
+         /^(http|ftp|telnet|irc|news):\//
+            and $add_button->("run $self->{browser}" => sub { $self->exec_async ($self->{browser}, $_) });
+
+        /(\d{9,10})/
+            and do {
+                my $time = $1;
+                my $gmtime = gmtime($time);
+                $add_button->("gmtime $time = $gmtime" => sub { $_ = $gmtime } );
+            };
+        m{^(http://\S+)} and do {
+            my $url = $1;
+            use LWP::UserAgent;
+            $add_button->("Location $url" => sub {
+                my $ua = LWP::UserAgent->new(
+                    requests_redirectable => [],
+                );
+                $ua->timeout(10);
+                my $response = $ua->get($url);
+                my $redirect = $response->header("Location");
+                $_ = $redirect;
+            }, 4);
+        };
+
+         for my $hook (@{ $self->{term}{selection_popup_hook} || [] }) {
+            if (my ($title, $cb) = $hook->($popup)) {
+               $add_button->($title, $cb);
+            }
+         }
+
+         if (/^\s*((?:0x)?\d+)\s*$/) {
+            $popup->add_title (sprintf "%20s", eval $1);
+            $popup->add_title (sprintf "%20s", sprintf "0x%x", eval $1);
+            $popup->add_title (sprintf "%20s", sprintf "0%o", eval $1);
+         }
+
+         exists $self->{widgetsel}
+            and do {
+                $add_button->('widget' => sub { $_ = $self->{widgetsel} } );
+                $add_button->(
+                    "clear" => sub {
+                    @params = ();
+                });
+            };
+      }
+
+      $popup->show;
+
+      return 1;
+   }
+
+   ()
+}
+
+
+sub on_sel_make {
+   my ($self, $time) = @_;
+
+   my ($begrow, $begcol) = $self->selection_beg;
+   my ($endrow, $endcol) = $self->selection_end;
+
+   my @drawchars = (chr(9474), chr(9472), chr(9484));
+
+   delete $self->{widgetsel};
+
+   my $extraspace = 0;
+
+   for my $row ($begrow .. $endrow) {
+      my $text = $self->ROW_t($row);
+
+      use List::Util qw(min max);
+
+      my $startpos = max map rindex($text, $_, $begcol), @drawchars;
+      $startpos = $begcol-1 if $begrow == $row;
+
+      my $endpos = min grep $_>=0, map index($text, $_, $endcol), @drawchars;
+      $endpos = $endcol+1 if $endrow == $row;
+      $endpos = -1 unless defined $endpos;
+
+      substr($text, $endpos) = '';
+      substr($text, 0, 1+$startpos) = '';
+
+      my $lastextraspace = $extraspace;
+
+      $text =~ s/^\s+//;
+      $text =~ s/((?:$urxvt::NOCHAR|\s)+)\z//;
+      $extraspace = defined($1) ? length($1) : 0;
+
+      if (exists $self->{widgetsel}) {
+
+         # Heuristics to find hard line breaks
+         my $separator = ' ';
+         if (my ($firstword) = $text =~ /^(\S+)/) {
+            if (length($firstword) + 2 < $lastextraspace) {
+               $separator = "\n";
+            }
+         }
+
+         $self->{widgetsel} .= $separator . $text;
+      } else {
+         $self->{widgetsel} = $text;
+      }
+   }
+}
