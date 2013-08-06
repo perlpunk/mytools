@@ -1,0 +1,51 @@
+#thread_overview {
+    top: 5px;
+    right: 12px;
+    position: fixed;
+    border: 1px solid #999;
+    background-color: white;
+    box-shadow: 5px 5px 5px #999;
+    padding: 4px;
+
+}
+div.overview_posting {
+    padding: 0px 2px 0px 2px;
+    font-size: 85%;
+    /*
+    background-color: #88aaff;
+    */
+    cursor: pointer;
+    border-top: 1px solid #666666;
+}
+#thread_overview div.age_0 { background-color: #f0f0f0; }
+#thread_overview div.age_1 { background-color: #e0e8f0; }
+#thread_overview div.age_2 { background-color: #d0e0f0; }
+#thread_overview div.age_3 { background-color: #c0d8f0; }
+#thread_overview div.age_4 { background-color: #b0d0f0; }
+#thread_overview div.age_5 { background-color: #a0c8f0; }
+#thread_overview div.age_6 { background-color: #90c0f0; }
+#thread_overview div.age_7 { background-color: #80b8f0; }
+#thread_overview div.age_8 { background-color: #70b0f0; }
+
+#thread_overview_toggle_div {
+    position: fixed;
+    color: #bbddff;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 120%;
+    z-index: 10;
+    top: 10px;
+    right: 0px;
+    background-color: black;
+    border-radius: 10px 0px 0px 10px;
+}
+
+#thread_overview_outline {
+    position: absolute;
+    right: 0px;
+    width: 3px;
+    margin: 0px;
+    background-color: #aaa;
+    border-radius: 2px;
+    border: 1px solid #333;
+}
