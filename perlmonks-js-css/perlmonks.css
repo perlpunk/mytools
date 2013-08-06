@@ -6,7 +6,13 @@
     background-color: white;
     box-shadow: 5px 5px 5px #999;
     padding: 4px;
-
+    max-height: 95%;
+    overflow-y: hidden;
+    overflow-x: hidden;
+}
+#thread_overview:hover {
+    max-width: none;
+    overflow-y: auto;
 }
 div.overview_posting {
     padding: 0px 2px 0px 2px;
