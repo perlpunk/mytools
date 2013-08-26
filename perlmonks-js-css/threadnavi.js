@@ -58,7 +58,13 @@ function createOverview() {
     $('body').append(toggle_div);
     var outline = $('<div id="thread_overview_outline" />');
     $('#thread_overview').append(outline);
+    $('#thread_overview').overview_drags();
 
+    var saved_top = localStorage.getItem('poard_thread_navi_top');
+    var saved_right = localStorage.getItem('poard_thread_navi_right');
+    if (saved_top && saved_right) {
+        $('#thread_overview').css({ top: saved_top+'px', right: saved_right+'px' });
+    }
 
     var first_time = 0;
     var last_age = 0;
@@ -239,3 +245,53 @@ function create_overview_shortcut_event(shortcut_toggle) {
         });
     }
 }
+
+// http://css-tricks.com/snippets/jquery/draggable-without-jquery-ui/
+(function($) {
+    $.fn.overview_drags = function(opt) {
+
+        opt = $.extend({handle:"",cursor:"move"}, opt);
+
+        if(opt.handle === "") {
+            var $el = this;
+        } else {
+            var $el = this.find(opt.handle);
+        }
+        var save_top;
+        var save_right;
+
+        return $el.css('cursor', opt.cursor).on("mousedown", function(e) {
+            if(opt.handle === "") {
+                var $drag = $(this).addClass('draggable');
+            } else {
+                var $drag = $(this).addClass('active-handle').parent().addClass('draggable');
+            }
+            var z_idx = $drag.css('z-index'),
+                drg_h = $drag.outerHeight(),
+                drg_w = $drag.outerWidth(),
+                pos_y = $drag.offset().top + drg_h - e.pageY,
+                pos_x = $drag.offset().right + drg_w - e.pageX;
+                var width = window.innerWidth;
+            $drag.css('z-index', 1000).parents().on("mousemove", function(e) {
+                save_right = width-(e.pageX+drg_w);
+                save_top = e.pageY + pos_y - drg_h;
+                $('.draggable').css({
+                    right: save_right+'px',
+                    top: save_top+'px'
+                    }).on("mouseup", function() {
+                    $(this).removeClass('draggable').css('z-index', z_idx);
+                });
+            });
+            e.preventDefault(); // disable selection
+        }).on("mouseup", function() {
+            if(opt.handle === "") {
+                $(this).removeClass('draggable');
+            } else {
+                $(this).removeClass('active-handle').parent().removeClass('draggable');
+            }
+            localStorage.setItem('poard_thread_navi_top', save_top);
+            localStorage.setItem('poard_thread_navi_right', save_right);
+        });
+
+    }
+})(jQuery);
