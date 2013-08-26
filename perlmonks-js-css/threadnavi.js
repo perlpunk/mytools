@@ -20,7 +20,25 @@ function createOverview() {
     if (notes.length == 0)
         return;
 
-    var overview = $('<div id="thread_overview" >Navi</div>');
+    var overview;
+    if (localStorage) {
+        overview = $('<div id="thread_overview" >Navi <a href="javascript:toggle_overview_settings();">[Settings]</a></div>');
+        var shortcut_toggle = localStorage.getItem('poard_thread_navi_shortcut_toggle');
+        if (shortcut_toggle == null) {
+            shortcut_toggle = '';
+        }
+        else {
+            create_overview_shortcut_event(shortcut_toggle);
+        }
+        var settings = $('<div id="overview_settings" style="display: none; position: fixed; z-index: 15; padding: 5px; background-color: white; border: 1px solid black; ">Shortcut for Navi:<br>'
+        +'toggle: CTRL-'
+        +'<input type="text" size="2" maxlength="1" value="'+shortcut_toggle+'" id="overview_shortcut_toggle"><br>'
+        +'<button onclick="save_overview_shortcuts()">Save</button></div>');
+        $(overview).append(settings);
+    }
+    else {
+        overview = $('<div id="thread_overview" >Navi</div>');
+    }
     $('body').append(overview);
     var first_author = $('#titlebar-top span.attribution a').text();
     var first = $('<div class="overview_posting" id="top_posting">'+first_author+'</div>');
@@ -180,3 +198,44 @@ function draw_outline() {
     $('#thread_overview_outline').css({ height: outline_height-2 + 'px'});
 }
 
+function toggle_overview_settings(set) {
+    if (set == null) {
+        if ($('#overview_settings').css('display') == 'none') {
+            set = 1;
+        }
+        else {
+            set = 0;
+        }
+    }
+    if (set == 1) {
+        $('#overview_settings').show(100);
+    }
+    else {
+        $('#overview_settings').hide(100);
+    }
+}
+
+function save_overview_shortcuts() {
+    var shortcut_toggle = $('#overview_shortcut_toggle').val();
+    if (shortcut_toggle.length) {
+        shortcut_toggle = shortcut_toggle.toUpperCase();
+        localStorage.setItem('poard_thread_navi_shortcut_toggle', shortcut_toggle);
+        create_overview_shortcut_event(shortcut_toggle);
+    }
+    else {
+        localStorage.setItem('poard_thread_navi_shortcut_toggle', '');
+    }
+    toggle_overview_settings(0);
+}
+
+function create_overview_shortcut_event(shortcut_toggle) {
+    if (shortcut_toggle != null && shortcut_toggle.length) {
+        var code_open = shortcut_toggle.charCodeAt(0);
+        $(window).keydown(function(event) {
+            if(event.keyCode == code_open && event.ctrlKey) {
+                event.preventDefault();
+                toggle_overview();
+            }
+        });
+    }
+}

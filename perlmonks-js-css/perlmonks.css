@@ -20,6 +20,8 @@ div.overview_posting {
     white-space: nowrap;
     cursor: pointer;
     border-top: 1px solid #666666;
+    white-space: nowrap;
+
 }
 #thread_overview div.age_0 { background-color: #f0f0f0; }
 #thread_overview div.age_1 { background-color: #e0e8f0; }
