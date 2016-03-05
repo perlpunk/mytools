@@ -60,6 +60,16 @@ sub on_button_press {
 
       for ($text) {
 
+         /^[A-Za-z]+(::[A-Za-z0-9])*/ and do {
+            $add_button->("MetaCPAN search" => sub {
+                my $url = "https://metacpan.org/search?size=20&q=$_&search_type=modules";
+                system "sensible-browser", $url;
+            });
+            $add_button->("MetaCPAN" => sub {
+                my $url = "https://metacpan.org/pod/$_";
+                system "sensible-browser", $url;
+            });
+         };
          /./
             and do {
                 $add_button->("rot13" => sub { y/A-Za-z/N-ZA-Mn-za-m/ });
@@ -101,7 +111,7 @@ sub on_button_press {
          /[\\"'\ \t|&;<>()]/
             and $add_button->("shell quote" => sub { $_ = "\Q$_" });
 
-         /^(http|ftp|telnet|irc|news):\//
+         /^(https?|ftp|telnet|irc|news):\//
             and $add_button->("run $self->{browser}" => sub { $self->exec_async ($self->{browser}, $_) });
 
         /(\d{9,10})/
@@ -110,7 +120,7 @@ sub on_button_press {
                 my $gmtime = gmtime($time);
                 $add_button->("gmtime $time = $gmtime" => sub { $_ = $gmtime } );
             };
-        m{^(http://\S+)} and do {
+        m{^(https?://\S+)} and do {
             my $url = $1;
             use LWP::UserAgent;
             $add_button->("Location $url" => sub {
