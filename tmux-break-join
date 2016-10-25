@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+
+# makes breaking and joining panes a bit more comfortable
+
+if [[ "$#" -lt 2 ]]; then
+    echo "Usage:"
+    echo "    $0 (break|join) (<params>) [options]"
+    echo "    $0 break <title> [ break-pane options ]"
+    echo "    $0 join (<title>|-) [ join-pane options ]"
+    echo ""
+    echo "If the title is '-', it will let you choose from the window list"
+    echo ""
+    echo "Might only work for tmux >= 2.2"
+    exit 1
+fi
+declare tmux_action="$1"
+declare window_title="$2"
+
+# remove those two arguments from $@
+shift
+shift
+
+if [[ "$tmux_action" == "break" ]]; then
+    tmux break-pane
+    tmux rename-window "(($window_title))"
+    tmux last-window
+else
+    if [[ "$window_title" == "-" ]]; then
+        if [[ "$#" -gt 0 ]]; then
+            tmux choose-window -F "#{window_name})" 'join-pane -s "%%" "'$*'"'
+        else
+            tmux choose-window -F "#{window_name})" 'join-pane -s "%%" '
+        fi
+    else
+        tmux join-pane -s "(($window_title))" $*
+    fi
+fi
+
+# example key bindings, default name for pane is 'sticky'
+# bind-key F1 command-prompt -I sticky -p "tmux-break-join break" 'run-shell "/path/to/tmux-break-join break %%"'
+# bind-key F2 command-prompt -I sticky -p "tmux-break-join join" 'run-shell "/path/to/tmux-break-join join %%"'
+
