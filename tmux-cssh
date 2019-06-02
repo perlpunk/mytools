@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# a tiny alternative to clusterssh https://github.com/duncs/clusterssh
+
+if [[ $# -eq 0 ]]; then
+    cat <<USAGE
+Usage:
+    $0 host1 host2 ...
+USAGE
+    exit
+fi
+
+hosts=("$@")
+host="${hosts[0]}"
+hosts=("${hosts[@]:1:${#hosts[@]}}")
+
+TMUX_CMD="tmux"
+SSH_CMD="ssh"
+
+if [[ -z "$TMUX" ]]; then
+    # not running inside tmux
+    SESSION=tmux-cssh
+    $TMUX_CMD -2 new-session -d -s "$SESSION" "$SSH_CMD $host"
+
+else
+    SESSION="$($TMUX_CMD display -p '#S')"
+    $TMUX_CMD new-window -t "$SESSION" "$SSH_CMD $host"
+fi
+
+for i in "${hosts[@]}"
+do
+    $TMUX_CMD split-window -t "$SESSION" "$SSH_CMD $i"
+done
+
+$TMUX_CMD select-layout -t "$SESSION" tiled
+
+
+if [[ -z "$TMUX" ]]; then
+    $TMUX_CMD attach -t "$SESSION"
+fi
+
+# recommended configuration:
+#
+# Toggle synchronization of panes with PREFIX + C
+# bind C set synchronize-panes
+
+# Enable/disable mouse with PREFIX + m / PREFIX + M.
+# Useful for resizing panes
+# bind m set -g mouse on
+# bind M set -g mouse off
+
+# See also:
+# https://github.com/spappier/tmuxssh
+# https://github.com/nean-and-i/tssh
+
